@@ -57,9 +57,43 @@ export function findScssFile(basePath: string): string | null {
 async function getScssCompletions(
   partialPath: string,
   currentFileUri: vscode.Uri,
-  aliasMap: PathAliasMap
+  aliasMap: PathAliasMap,
+  aliasRange: vscode.Range
 ): Promise<vscode.CompletionItem[]> {
   const completions: vscode.CompletionItem[] = [];
+
+  console.log(
+    `[SCSS Completions] partialPath: "${partialPath}", aliasMap size: ${aliasMap.size}`
+  );
+
+  for (const [pattern] of aliasMap) {
+    const cleanAlias = pattern.replace(/\/\*?$/, "");
+    console.log(
+      `[SCSS Completions] Checking alias: "${cleanAlias}" against "${partialPath}"`
+    );
+
+    if (cleanAlias.startsWith(partialPath)) {
+      console.log(`[SCSS Completions] ✓ Match found: "${cleanAlias}"`);
+      const item = new vscode.CompletionItem(
+        cleanAlias,
+        vscode.CompletionItemKind.Folder
+      );
+      item.detail = "Path Alias";
+      item.range = aliasRange;
+
+      if (pattern.endsWith("/*")) {
+        item.insertText = cleanAlias + "/";
+        item.command = {
+          command: "editor.action.triggerSuggest",
+          title: "Trigger Suggest",
+        };
+      } else {
+        item.insertText = cleanAlias;
+      }
+
+      completions.push(item);
+    }
+  }
 
   let dirPath = partialPath;
   const lastSlash = partialPath.lastIndexOf("/");
@@ -243,25 +277,51 @@ export function registerScssProviders(
           const regex = /@(?:use|forward|import)\s+["']([^"']*)$/;
           const match = textBeforeCursor.match(regex);
 
+          console.log(
+            `[SCSS Provider] textBeforeCursor: "${textBeforeCursor}"`
+          );
+          console.log(`[SCSS Provider] regex match:`, match);
+
           if (!match) {
+            console.log(`[SCSS Provider] No match, returning`);
             return;
           }
 
           const repoContext = getRepositoryContext(document.uri, contexts);
           if (!repoContext) {
+            console.log(`[SCSS Provider] No repo context, returning`);
             return;
           }
 
           const partialPath = match[1];
+          console.log(
+            `[SCSS Provider] partialPath: "${partialPath}", aliases:`,
+            Array.from(repoContext.aliases.keys())
+          );
+
+          const startChar = position.character - partialPath.length;
+          const range = new vscode.Range(
+            position.line,
+            startChar,
+            position.line,
+            position.character
+          );
+
           return getScssCompletions(
             partialPath,
             document.uri,
-            repoContext.aliases
+            repoContext.aliases,
+            range
           );
         },
       },
+      "'",
+      '"',
       "/",
-      "@"
+      "@",
+      ..."abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-".split(
+        ""
+      )
     );
 
     context.subscriptions.push(
