@@ -105,10 +105,24 @@ export async function activate(context: vscode.ExtensionContext) {
     const { registerScssProviders, registerScssDiagnostics } = await import(
       "./scss-definition-provider.js"
     );
+    const { ScssVariableDefinitionProvider } = await import(
+      "./scss-variable-provider.js"
+    );
+
     registerScssProviders(context, mergedAliases);
     registerScssDiagnostics(context, mergedAliases);
 
-    console.log("SCSS providers and diagnostics registered");
+    const variableProvider = new ScssVariableDefinitionProvider(mergedAliases);
+    context.subscriptions.push(
+      vscode.languages.registerDefinitionProvider(
+        ["scss", "sass"],
+        variableProvider
+      )
+    );
+
+    console.log(
+      "SCSS providers, diagnostics, and variable navigation registered"
+    );
   }
 }
 

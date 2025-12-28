@@ -10,7 +10,10 @@ function parseScssImport(line: string): string | null {
   return match ? match[1] : null;
 }
 
-function resolveScssPath(
+/**
+ * Resolves the path of the SCSS file based on the import path
+ */
+export function resolveScssPath(
   importPath: string,
   currentFileUri: vscode.Uri,
   aliasMap: PathAliasMap
@@ -25,7 +28,7 @@ function resolveScssPath(
   );
 }
 
-function findScssFile(basePath: string): string | null {
+export function findScssFile(basePath: string): string | null {
   const basename = path.basename(basePath);
   const dirname = path.dirname(basePath);
   const variants: string[] = [];
@@ -47,6 +50,9 @@ function findScssFile(basePath: string): string | null {
   return variants.find(fs.existsSync) || null;
 }
 
+/**
+ * Completion Provider for SCSS variables, mixins and functions
+ */
 async function getScssCompletions(
   partialPath: string,
   currentFileUri: vscode.Uri,
@@ -243,6 +249,9 @@ export function registerScssProviders(
   });
 }
 
+/**
+ * Validates the SCSS imports in the document
+ */
 function validateScssImports(
   document: vscode.TextDocument,
   aliasMap: PathAliasMap
@@ -278,6 +287,9 @@ function validateScssImports(
   return diagnostics;
 }
 
+/**
+ * Registers the SCSS diagnostics provider
+ */
 export function registerScssDiagnostics(
   context: vscode.ExtensionContext,
   aliasMap: PathAliasMap
