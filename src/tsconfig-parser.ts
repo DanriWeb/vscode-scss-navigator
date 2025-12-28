@@ -163,3 +163,23 @@ export function mergeAliasMaps(...aliasMaps: PathAliasMap[]): PathAliasMap {
 
   return merged;
 }
+
+/**
+ * Find tsconfig.json in the specified directory
+ * @param directoryUri URI of the directory to search in
+ * @returns URI of the found tsconfig.json or undefined
+ */
+export async function findTsConfigInDirectory(
+  directoryUri: vscode.Uri
+): Promise<vscode.Uri | undefined> {
+  const tsconfigPath = vscode.Uri.joinPath(directoryUri, "tsconfig.json");
+
+  try {
+    await vscode.workspace.fs.stat(tsconfigPath);
+    console.log(`tsconfig.json found: ${tsconfigPath.fsPath}`);
+    return tsconfigPath;
+  } catch (error) {
+    console.log(`tsconfig.json not found in: ${directoryUri.fsPath}`);
+    return undefined;
+  }
+}

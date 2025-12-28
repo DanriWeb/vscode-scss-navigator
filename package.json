@@ -18,13 +18,35 @@
     "configuration": {
       "title": "SCSS Navigator",
       "properties": {
-        "scssNavigator.tsconfigPaths": {
+        "scssNavigator.repositoryPaths": {
           "type": "array",
           "items": {
-            "type": "string"
+            "oneOf": [
+              {
+                "type": "string",
+                "description": "Path to repository directory or tsconfig.json file"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "root": {
+                    "type": "string",
+                    "description": "Path to repository root directory"
+                  },
+                  "tsconfig": {
+                    "type": "string",
+                    "description": "Path to tsconfig.json file (optional)"
+                  }
+                },
+                "required": [
+                  "root"
+                ],
+                "additionalProperties": false
+              }
+            ]
           },
           "default": [],
-          "markdownDescription": "Пути к `tsconfig.json` файлам для чтения алиасов путей.\n\n**Примеры:**\n- `[\"./tsconfig.json\"]` — один файл\n- `[\"./packages/frontend/tsconfig.json\", \"./packages/backend/tsconfig.json\"]` — несколько файлов для монорепозитория\n- `[]` — автоматический поиск (по умолчанию)"
+          "markdownDescription": "Repository paths in a monorepo. Supports strings or objects.\n\n**Examples:**\n- `[]` — auto-search in workspace root (default)\n- `[\"./packages/frontend\"]` — directory path\n- `[{\"root\": \"./packages/backend\", \"tsconfig\": \"./config/tsconfig.json\"}]` — object with explicit paths\n- Mixed usage is supported"
         }
       }
     }

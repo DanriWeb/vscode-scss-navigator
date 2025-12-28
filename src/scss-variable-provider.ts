@@ -1,16 +1,18 @@
 import * as vscode from "vscode";
-import { PathAliasMap } from "./types";
+import { PathAliasMap, RepositoryContextMap } from "./types";
 import { resolveScssPath, findScssFile } from "./scss-definition-provider";
 import { scssCache, ScssImport } from "./scss-cache";
+import { getRepositoryContext } from "./extension";
 
 /**
  * Parses the SCSS imports in a document
  */
 export function parseScssImports(
   document: vscode.TextDocument,
-  aliasMap: PathAliasMap
+  aliasMap: PathAliasMap,
+  repositoryPath: string
 ): ScssImport[] {
-  const cached = scssCache.getImports(document.uri.toString());
+  const cached = scssCache.getImports(repositoryPath, document.uri.toString());
   if (cached) {
     return cached;
   }
@@ -58,18 +60,19 @@ export function parseScssImports(
     }
   }
 
-  scssCache.setImports(document.uri.toString(), imports);
+  scssCache.setImports(repositoryPath, document.uri.toString(), imports);
   return imports;
 }
 
 /**
  * Parses the forward imports in a file
  */
-async function parseForwardImports(
+export async function parseForwardImports(
   filePath: string,
-  aliasMap: PathAliasMap
+  aliasMap: PathAliasMap,
+  repositoryPath: string
 ): Promise<string[]> {
-  const cached = scssCache.getForwards(filePath);
+  const cached = scssCache.getForwards(repositoryPath, filePath);
   if (cached) {
     return cached;
   }
@@ -96,10 +99,10 @@ async function parseForwardImports(
       }
     }
   } catch (error) {
-    // Ignore
+    return [];
   }
 
-  scssCache.setForwards(filePath, forwardedFiles);
+  scssCache.setForwards(repositoryPath, filePath, forwardedFiles);
   return forwardedFiles;
 }
 
@@ -111,6 +114,7 @@ export async function findDefinitionInFile(
   name: string,
   type: "variable" | "mixin" | "function",
   aliasMap: PathAliasMap,
+  repositoryPath: string,
   visitedFiles: Set<string> = new Set()
 ): Promise<vscode.Location | null> {
   if (visitedFiles.has(filePath)) {
@@ -120,7 +124,7 @@ export async function findDefinitionInFile(
 
   const cacheKey = `${filePath}:${name}:${type}`;
   if (visitedFiles.size === 1) {
-    const cached = scssCache.getDefinition(cacheKey);
+    const cached = scssCache.getDefinition(repositoryPath, cacheKey);
     if (cached !== undefined) {
       return cached;
     }
@@ -167,7 +171,7 @@ export async function findDefinitionInFile(
           );
 
           if (visitedFiles.size === 1) {
-            scssCache.setDefinition(cacheKey, location);
+            scssCache.setDefinition(repositoryPath, cacheKey, location);
           }
 
           return location;
@@ -175,13 +179,18 @@ export async function findDefinitionInFile(
       }
     }
 
-    const forwardedFiles = await parseForwardImports(filePath, aliasMap);
+    const forwardedFiles = await parseForwardImports(
+      filePath,
+      aliasMap,
+      repositoryPath
+    );
     for (const forwardedFile of forwardedFiles) {
       const location = await findDefinitionInFile(
         forwardedFile,
         name,
         type,
         aliasMap,
+        repositoryPath,
         visitedFiles
       );
       if (location) {
@@ -193,7 +202,7 @@ export async function findDefinitionInFile(
   }
 
   if (visitedFiles.size === 1) {
-    scssCache.setDefinition(cacheKey, null);
+    scssCache.setDefinition(repositoryPath, cacheKey, null);
   }
 
   return null;
@@ -205,7 +214,7 @@ export async function findDefinitionInFile(
 export class ScssVariableDefinitionProvider
   implements vscode.DefinitionProvider
 {
-  constructor(private aliasMap: PathAliasMap) {}
+  constructor(private contexts: RepositoryContextMap) {}
 
   async provideDefinition(
     document: vscode.TextDocument,
@@ -213,7 +222,16 @@ export class ScssVariableDefinitionProvider
   ): Promise<vscode.Definition | null> {
     const line = document.lineAt(position.line).text;
 
-    const imports = parseScssImports(document, this.aliasMap);
+    const repoContext = getRepositoryContext(document.uri, this.contexts);
+    if (!repoContext) {
+      return null;
+    }
+
+    const imports = parseScssImports(
+      document,
+      repoContext.aliases,
+      repoContext.rootPath
+    );
 
     const varWithNamespace = document.getWordRangeAtPosition(
       position,
@@ -232,7 +250,8 @@ export class ScssVariableDefinitionProvider
             importInfo.filePath,
             variableName,
             "variable",
-            this.aliasMap
+            repoContext.aliases,
+            repoContext.rootPath
           );
         }
       }
@@ -254,7 +273,8 @@ export class ScssVariableDefinitionProvider
               importInfo.filePath,
               variableName,
               "variable",
-              this.aliasMap
+              repoContext.aliases,
+              repoContext.rootPath
             );
             if (location) {
               return location;
@@ -275,7 +295,8 @@ export class ScssVariableDefinitionProvider
           importInfo.filePath,
           mixinName,
           "mixin",
-          this.aliasMap
+          repoContext.aliases,
+          repoContext.rootPath
         );
       }
     }
@@ -290,7 +311,8 @@ export class ScssVariableDefinitionProvider
             importInfo.filePath,
             mixinName,
             "mixin",
-            this.aliasMap
+            repoContext.aliases,
+            repoContext.rootPath
           );
           if (location) {
             return location;
@@ -316,7 +338,8 @@ export class ScssVariableDefinitionProvider
             importInfo.filePath,
             functionName,
             "function",
-            this.aliasMap
+            repoContext.aliases,
+            repoContext.rootPath
           );
         }
       }
@@ -338,7 +361,8 @@ export class ScssVariableDefinitionProvider
               importInfo.filePath,
               functionName,
               "function",
-              this.aliasMap
+              repoContext.aliases,
+              repoContext.rootPath
             );
             if (location) {
               return location;

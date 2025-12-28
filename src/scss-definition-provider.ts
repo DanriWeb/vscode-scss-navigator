@@ -1,8 +1,9 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
-import { PathAliasMap } from "./types";
+import { PathAliasMap, RepositoryContextMap } from "./types";
 import { resolveAlias } from "./tsconfig-parser";
+import { getRepositoryContext } from "./extension";
 
 function parseScssImport(line: string): string | null {
   const regex = /@(?:use|forward|import)\s+['"]([^'"]+)['"]/;
@@ -119,7 +120,7 @@ async function getScssCompletions(
 
 export function registerScssProviders(
   context: vscode.ExtensionContext,
-  aliasMap: PathAliasMap
+  contexts: RepositoryContextMap
 ): void {
   const languages = ["scss", "sass"];
 
@@ -135,10 +136,15 @@ export function registerScssProviders(
             return;
           }
 
+          const repoContext = getRepositoryContext(document.uri, contexts);
+          if (!repoContext) {
+            return;
+          }
+
           const resolvedPath = resolveScssPath(
             importPath,
             document.uri,
-            aliasMap
+            repoContext.aliases
           );
           const filePath = findScssFile(resolvedPath);
 
@@ -165,10 +171,14 @@ export function registerScssProviders(
 
             while ((match = regex.exec(line.text)) !== null) {
               const importPath = match[1];
+              const repoContext = getRepositoryContext(document.uri, contexts);
+              if (!repoContext) {
+                continue;
+              }
               const resolvedPath = resolveScssPath(
                 importPath,
                 document.uri,
-                aliasMap
+                repoContext.aliases
               );
               const filePath = findScssFile(resolvedPath);
 
@@ -203,10 +213,15 @@ export function registerScssProviders(
             return;
           }
 
+          const repoContext = getRepositoryContext(document.uri, contexts);
+          if (!repoContext) {
+            return;
+          }
+
           const resolvedPath = resolveScssPath(
             importPath,
             document.uri,
-            aliasMap
+            repoContext.aliases
           );
           const filePath = findScssFile(resolvedPath);
 
@@ -232,8 +247,17 @@ export function registerScssProviders(
             return;
           }
 
+          const repoContext = getRepositoryContext(document.uri, contexts);
+          if (!repoContext) {
+            return;
+          }
+
           const partialPath = match[1];
-          return getScssCompletions(partialPath, document.uri, aliasMap);
+          return getScssCompletions(
+            partialPath,
+            document.uri,
+            repoContext.aliases
+          );
         },
       },
       "/",
@@ -292,7 +316,7 @@ function validateScssImports(
  */
 export function registerScssDiagnostics(
   context: vscode.ExtensionContext,
-  aliasMap: PathAliasMap
+  contexts: RepositoryContextMap
 ): void {
   const diagnosticCollection =
     vscode.languages.createDiagnosticCollection("scss");
@@ -300,18 +324,36 @@ export function registerScssDiagnostics(
 
   async function updateDiagnostics(document: vscode.TextDocument) {
     if (document.languageId === "scss" || document.languageId === "sass") {
-      const importDiagnostics = validateScssImports(document, aliasMap);
+      const repoContext = getRepositoryContext(document.uri, contexts);
+      if (!repoContext) {
+        return;
+      }
+      const importDiagnostics = validateScssImports(
+        document,
+        repoContext.aliases
+      );
       diagnosticCollection.set(document.uri, importDiagnostics);
     }
   }
 
   async function updateDiagnosticsWithSymbols(document: vscode.TextDocument) {
     if (document.languageId === "scss" || document.languageId === "sass") {
+      const repoContext = getRepositoryContext(document.uri, contexts);
+      if (!repoContext) {
+        return;
+      }
       const { validateScssSymbols } = await import(
         "./scss-symbol-validator.js"
       );
-      const importDiagnostics = validateScssImports(document, aliasMap);
-      const symbolDiagnostics = await validateScssSymbols(document, aliasMap);
+      const importDiagnostics = validateScssImports(
+        document,
+        repoContext.aliases
+      );
+      const symbolDiagnostics = await validateScssSymbols(
+        document,
+        repoContext.aliases,
+        repoContext.rootPath
+      );
       diagnosticCollection.set(document.uri, [
         ...importDiagnostics,
         ...symbolDiagnostics,

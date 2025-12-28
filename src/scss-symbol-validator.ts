@@ -10,11 +10,12 @@ import {
  */
 export async function validateScssSymbols(
   document: vscode.TextDocument,
-  aliasMap: PathAliasMap
+  aliasMap: PathAliasMap,
+  repositoryPath: string
 ): Promise<vscode.Diagnostic[]> {
   const diagnostics: vscode.Diagnostic[] = [];
 
-  const imports = parseScssImports(document, aliasMap);
+  const imports = parseScssImports(document, aliasMap, repositoryPath);
 
   for (let i = 0; i < document.lineCount; i++) {
     const line = document.lineAt(i);
@@ -37,7 +38,8 @@ export async function validateScssSymbols(
           importInfo.filePath,
           variableName,
           "variable",
-          aliasMap
+          aliasMap,
+          repositoryPath
         );
 
         if (!location) {
@@ -80,7 +82,8 @@ export async function validateScssSymbols(
             importInfo.filePath,
             variableName,
             "variable",
-            aliasMap
+            aliasMap,
+            repositoryPath
           );
 
           if (location) {
@@ -130,7 +133,8 @@ export async function validateScssSymbols(
           importInfo.filePath,
           mixinName,
           "mixin",
-          aliasMap
+          aliasMap,
+          repositoryPath
         );
 
         if (!location) {
@@ -173,7 +177,8 @@ export async function validateScssSymbols(
             importInfo.filePath,
             mixinName,
             "mixin",
-            aliasMap
+            aliasMap,
+            repositoryPath
           );
 
           if (location) {
@@ -223,7 +228,8 @@ export async function validateScssSymbols(
           importInfo.filePath,
           functionName,
           "function",
-          aliasMap
+          aliasMap,
+          repositoryPath
         );
 
         if (!location) {
@@ -285,7 +291,8 @@ export async function validateScssSymbols(
             importInfo.filePath,
             functionName,
             "function",
-            aliasMap
+            aliasMap,
+            repositoryPath
           );
 
           if (location) {
