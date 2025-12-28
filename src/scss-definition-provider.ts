@@ -122,7 +122,34 @@ export function registerScssProviders(
       }
     );
 
-    context.subscriptions.push(definitionProvider, linkProvider);
+    const hoverProvider = vscode.languages.registerHoverProvider(
+      { language },
+      {
+        provideHover(document, position) {
+          const line = document.lineAt(position.line).text;
+          const importPath = parseScssImport(line);
+
+          if (!importPath) {
+            return;
+          }
+
+          const resolvedPath = resolveScssPath(
+            importPath,
+            document.uri,
+            aliasMap
+          );
+          const filePath = findScssFile(resolvedPath);
+
+          if (filePath) {
+            const markdown = new vscode.MarkdownString();
+            markdown.appendMarkdown(`\`${filePath}\``);
+            return new vscode.Hover(markdown);
+          }
+        },
+      }
+    );
+
+    context.subscriptions.push(definitionProvider, linkProvider, hoverProvider);
   });
 }
 
@@ -148,7 +175,7 @@ function validateScssImports(
 
         const diagnostic = new vscode.Diagnostic(
           range,
-          `Cannot find SCSS file: ${importPath}`,
+          `Cannot find SCSS file: \`${importPath}\``,
           vscode.DiagnosticSeverity.Error
         );
 
