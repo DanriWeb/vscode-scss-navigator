@@ -298,10 +298,24 @@ export function registerScssDiagnostics(
     vscode.languages.createDiagnosticCollection("scss");
   context.subscriptions.push(diagnosticCollection);
 
-  function updateDiagnostics(document: vscode.TextDocument) {
+  async function updateDiagnostics(document: vscode.TextDocument) {
     if (document.languageId === "scss" || document.languageId === "sass") {
-      const diagnostics = validateScssImports(document, aliasMap);
-      diagnosticCollection.set(document.uri, diagnostics);
+      const importDiagnostics = validateScssImports(document, aliasMap);
+      diagnosticCollection.set(document.uri, importDiagnostics);
+    }
+  }
+
+  async function updateDiagnosticsWithSymbols(document: vscode.TextDocument) {
+    if (document.languageId === "scss" || document.languageId === "sass") {
+      const { validateScssSymbols } = await import(
+        "./scss-symbol-validator.js"
+      );
+      const importDiagnostics = validateScssImports(document, aliasMap);
+      const symbolDiagnostics = await validateScssSymbols(document, aliasMap);
+      diagnosticCollection.set(document.uri, [
+        ...importDiagnostics,
+        ...symbolDiagnostics,
+      ]);
     }
   }
 
@@ -317,14 +331,21 @@ export function registerScssDiagnostics(
     })
   );
 
+  let typingTimeout: NodeJS.Timeout | undefined;
   context.subscriptions.push(
     vscode.workspace.onDidChangeTextDocument((event) => {
-      updateDiagnostics(event.document);
+      if (typingTimeout) {
+        clearTimeout(typingTimeout);
+      }
+
+      typingTimeout = setTimeout(() => {
+        updateDiagnosticsWithSymbols(event.document);
+      }, 1000);
     })
   );
 
   context.subscriptions.push(
-    vscode.workspace.onDidSaveTextDocument(updateDiagnostics)
+    vscode.workspace.onDidSaveTextDocument(updateDiagnosticsWithSymbols)
   );
 
   context.subscriptions.push(

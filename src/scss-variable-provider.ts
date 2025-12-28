@@ -6,7 +6,7 @@ import { scssCache, ScssImport } from "./scss-cache";
 /**
  * Parses the SCSS imports in a document
  */
-function parseScssImports(
+export function parseScssImports(
   document: vscode.TextDocument,
   aliasMap: PathAliasMap
 ): ScssImport[] {
@@ -106,7 +106,7 @@ async function parseForwardImports(
 /**
  * Finds the definition of a variable, mixin, or function in a file
  */
-async function findDefinitionInFile(
+export async function findDefinitionInFile(
   filePath: string,
   name: string,
   type: "variable" | "mixin" | "function",
