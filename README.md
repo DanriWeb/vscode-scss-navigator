@@ -15,10 +15,10 @@
 
 - ✅ **Navigation for `@use` and `@import`** — Jump to SCSS/SASS files by clicking on imports
 - ✅ **Path Alias Support** — Automatically reads `paths` from `tsconfig.json`
-- ✅ **Variable Navigation** — Jump to variable definitions
-- ✅ **Mixin Navigation** — Jump to mixin definitions
-- ✅ **Function Navigation** — Jump to function definitions
-- ✅ **Diagnostic** — Highlights non-existent files and symbols
+- ✅ **Intelligent Autocomplete** — Suggestions for variables, mixins, functions, and path aliases
+- ✅ **Recursive Symbol Search** — Supports `@forward` for re-exporting variables
+- ✅ **Variable/Mixin/Function Navigation** — Jump to definitions with Ctrl+Click
+- ✅ **Diagnostic** — Highlights non-existent files and broken imports
 - ✅ **Monorepo Support** — Works with multiple `tsconfig.json` files
 - ✅ **Project References** — Automatically reads related configurations
 
@@ -75,7 +75,30 @@ Jump to function definitions:
 }
 ```
 
+### Intelligent Autocomplete
+
+The extension provides context-sensitive autocompletion for SCSS symbols:
+
+- **Variables (`$`)**: Type `$` to see available variables from imported files (`@use`, `@import`, and `@forward` are supported).
+- **Mixins (`@include`)**: Type `@include` to see available mixins.
+- **Functions**: Type `()` and start typing the function name before `()` to see suggestions.
+- **Path Aliases**: Type `@use "@` or `@import "~` to see available aliases from `tsconfig.json`.
+
+```scss
+@use "@/shared/styles/variables" as vars;
+
+.container {
+  // Autocomplete variables from 'vars' namespace
+  color: vars.$px-20;
+
+  // Autocomplete global variables
+  padding: $spacing-md;
+}
+```
+
 ---
+
+### Import Navigation / Definition
 
 ## 3. Configuration
 

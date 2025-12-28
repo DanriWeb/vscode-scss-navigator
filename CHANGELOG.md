@@ -35,3 +35,20 @@ All notable changes to the "vscode-scss-navigator" extension will be documented 
 ### Added
 
 - Added autocompletion for the aliases themselves.
+
+## [1.2.0] - December 28, 2025
+
+### Added
+
+- **Smart autocomplete:**
+
+- Variables (`$var`), mixins (`@include mixin`), and functions ().
+- Context-sensitive suggestions (testing stage)
+- Automatic function insertion before ()
+- Support for re-exporting variables via `@forward` (recursive symbol search).
+
+- **Improved DX:**
+
+- Duplicate symbol removal.
+- Correct text replacement when entering variables (e.g., correct handling of `$var-name`).
+- Icons for different symbol types.
