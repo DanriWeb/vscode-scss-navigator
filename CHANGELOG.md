@@ -52,3 +52,18 @@ All notable changes to the "vscode-scss-navigator" extension will be documented 
 - Duplicate symbol removal.
 - Correct text replacement when entering variables (e.g., correct handling of `$var-name`).
 - Icons for different symbol types.
+
+## [1.3.0] - 28.12.2025
+
+### Added
+
+- **Automatic file indexing for autocompletion:**
+- Autocompletion now works EXACTLY without manually opening imported files.
+- Symbols (variables, mixins, functions) are automatically collected from all `@use`, `@forward`, and `@import` directives.
+- Recursive indexing along import chains for comprehensive symbol detection.
+- Improved caching to improve performance in large projects.
+
+### Changed
+
+- Improved the `collectSymbolsRecursively` function for automatic parsing of imports from files.
+- Added the `parseFileImports` function for parsing imports from file paths (not just from open documents).
