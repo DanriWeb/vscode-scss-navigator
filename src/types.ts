@@ -68,3 +68,38 @@ export type RepositoryPathConfig =
       root: string;
       tsconfig?: string;
     };
+
+/**
+ * type of SCSS symbol
+ */
+export type ScssSymbolType = "variable" | "mixin" | "function";
+
+/**
+ * SCSS symbol (variable, mixin or function)
+ */
+export interface ScssSymbol {
+  /** Name of symbol without prefixes ($, @mixin, @function) */
+  name: string;
+  /** Type of symbol */
+  type: ScssSymbolType;
+  /** Path to file where symbol is defined */
+  filePath: string;
+  /** Line number in file */
+  line: number;
+  /** Additional information (variable value, mixin/function parameters) */
+  detail?: string;
+  /** Documentation from comments */
+  documentation?: string;
+}
+
+/**
+ * Контекст автодополнения
+ */
+export interface CompletionContext {
+  /** Тип запрашиваемого символа */
+  symbolType: ScssSymbolType | null;
+  /** Namespace, если указан */
+  namespace: string | null;
+  /** Префикс для фильтрации */
+  prefix: string;
+}

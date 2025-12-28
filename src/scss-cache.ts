@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { ScssSymbol } from "./types";
 
 interface ScssImport {
   filePath: string;
@@ -10,13 +11,13 @@ interface ScssImport {
  * Supports per-repository caching for monorepo setups
  */
 class ScssCache {
-  // Кэш по репозиториям: Map<repositoryPath, Map<uri, data>>
   private importsCache = new Map<string, Map<string, ScssImport[]>>();
   private definitionsCache = new Map<
     string,
     Map<string, vscode.Location | null>
   >();
   private forwardCache = new Map<string, Map<string, string[]>>();
+  private symbolsCache = new Map<string, Map<string, ScssSymbol[]>>();
 
   private hits = 0;
   private misses = 0;
@@ -55,6 +56,18 @@ class ScssCache {
       this.forwardCache.set(repositoryPath, new Map());
     }
     return this.forwardCache.get(repositoryPath)!;
+  }
+
+  /**
+   * Returns the symbols cache for a repository
+   */
+  private getRepositorySymbolsCache(
+    repositoryPath: string
+  ): Map<string, ScssSymbol[]> {
+    if (!this.symbolsCache.has(repositoryPath)) {
+      this.symbolsCache.set(repositoryPath, new Map());
+    }
+    return this.symbolsCache.get(repositoryPath)!;
   }
 
   getImports(repositoryPath: string, uri: string): ScssImport[] | undefined {
@@ -110,10 +123,34 @@ class ScssCache {
     cache.set(filePath, forwards);
   }
 
+  getSymbols(
+    repositoryPath: string,
+    filePath: string
+  ): ScssSymbol[] | undefined {
+    const cache = this.getRepositorySymbolsCache(repositoryPath);
+    const cached = cache.get(filePath);
+    if (cached) {
+      this.hits++;
+    } else {
+      this.misses++;
+    }
+    return cached;
+  }
+
+  setSymbols(
+    repositoryPath: string,
+    filePath: string,
+    symbols: ScssSymbol[]
+  ): void {
+    const cache = this.getRepositorySymbolsCache(repositoryPath);
+    cache.set(filePath, symbols);
+  }
+
   invalidateFile(repositoryPath: string, uri: string): void {
     const importsCache = this.getRepositoryImportsCache(repositoryPath);
     const definitionsCache = this.getRepositoryDefinitionsCache(repositoryPath);
     const forwardCache = this.getRepositoryForwardCache(repositoryPath);
+    const symbolsCache = this.getRepositorySymbolsCache(repositoryPath);
 
     importsCache.delete(uri);
 
@@ -124,18 +161,21 @@ class ScssCache {
     }
 
     forwardCache.delete(uri);
+    symbolsCache.delete(uri);
   }
 
   invalidateRepository(repositoryPath: string): void {
     this.importsCache.delete(repositoryPath);
     this.definitionsCache.delete(repositoryPath);
     this.forwardCache.delete(repositoryPath);
+    this.symbolsCache.delete(repositoryPath);
   }
 
   clear(): void {
     this.importsCache.clear();
     this.definitionsCache.clear();
     this.forwardCache.clear();
+    this.symbolsCache.clear();
     this.hits = 0;
     this.misses = 0;
   }
@@ -145,6 +185,7 @@ class ScssCache {
     let totalImports = 0;
     let totalDefinitions = 0;
     let totalForwards = 0;
+    let totalSymbols = 0;
 
     for (const cache of this.importsCache.values()) {
       totalImports += cache.size;
@@ -154,6 +195,9 @@ class ScssCache {
     }
     for (const cache of this.forwardCache.values()) {
       totalForwards += cache.size;
+    }
+    for (const cache of this.symbolsCache.values()) {
+      totalSymbols += cache.size;
     }
 
     return {
@@ -165,6 +209,7 @@ class ScssCache {
         imports: totalImports,
         definitions: totalDefinitions,
         forwards: totalForwards,
+        symbols: totalSymbols,
       },
     };
   }

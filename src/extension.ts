@@ -21,11 +21,7 @@ async function loadRepositoryContexts(
   const config = vscode.workspace.getConfiguration("scssNavigator");
   const repoPaths = config.get<RepositoryPathConfig[]>("repositoryPaths", []);
 
-  console.log(`Repository paths from config: ${JSON.stringify(repoPaths)}`);
-
   const configs = repoPaths.length > 0 ? repoPaths : ["."]; // Use current directory if no paths specified
-
-  console.log(`Processing ${configs.length} configuration(s)`);
 
   const contexts: RepositoryContextMap = new Map();
 
@@ -33,7 +29,6 @@ async function loadRepositoryContexts(
     let rootPath: string;
     let tsconfigPath: string | undefined;
 
-    // Parse configuration item
     if (typeof configItem === "string") {
       rootPath = configItem;
       tsconfigPath = undefined;
@@ -43,7 +38,6 @@ async function loadRepositoryContexts(
     }
 
     const rootUri = vscode.Uri.joinPath(workspaceFolder.uri, rootPath);
-    console.log(`Processing repository: ${rootUri.fsPath}`);
 
     let tsconfigUri: vscode.Uri | undefined;
 
@@ -55,7 +49,6 @@ async function loadRepositoryContexts(
       try {
         await vscode.workspace.fs.stat(tsconfigFullUri);
         tsconfigUri = tsconfigFullUri;
-        console.log(`Using explicit tsconfig: ${tsconfigUri.fsPath}`);
       } catch (error) {
         console.warn(`tsconfig.json not found at: ${tsconfigFullUri.fsPath}`);
         continue;
@@ -101,9 +94,6 @@ async function loadRepositoryContexts(
     }
 
     const referencedConfigs = await readTsConfigWithReferences(tsconfigUri);
-    console.log(
-      `Found ${referencedConfigs.length} config(s) (including references) for ${rootUri.fsPath}`
-    );
 
     const allAliases = await loadAliasesFromConfigs(referencedConfigs);
 
@@ -116,9 +106,6 @@ async function loadRepositoryContexts(
       };
 
       contexts.set(rootUri.fsPath, context);
-      console.log(
-        `Repository context created for ${rootUri.fsPath} with ${allAliases.size} alias(es)`
-      );
     } else {
       console.warn(`No aliases found for ${rootUri.fsPath}`);
     }
@@ -140,11 +127,7 @@ async function loadAliasesFromConfigs(
     if (tsconfig) {
       const aliases = extractPathAliases(tsconfig, configUri);
       if (aliases.size > 0) {
-        console.log(
-          `Extracted ${aliases.size} alias(es) from ${configUri.fsPath}`
-        );
         for (const [pattern, paths] of aliases.entries()) {
-          console.log(`  ${pattern} -> ${paths.join(", ")}`);
           allAliases.set(pattern, paths);
         }
       }
@@ -180,8 +163,6 @@ export function getRepositoryContext(
 }
 
 export async function activate(context: vscode.ExtensionContext) {
-  console.log("SCSS Navigator activated");
-
   const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
   if (!workspaceFolder) {
     console.warn("No workspace folder found");
@@ -190,16 +171,14 @@ export async function activate(context: vscode.ExtensionContext) {
 
   const repositoryContexts = await loadRepositoryContexts(workspaceFolder);
 
-  console.log(`Loaded ${repositoryContexts.size} repository context(s):`);
-  for (const [rootPath, ctx] of repositoryContexts) {
-    console.log(`  - ${rootPath}: ${ctx.aliases.size} alias(es)`);
-  }
-
   const { registerScssProviders, registerScssDiagnostics } = await import(
     "./scss-definition-provider.js"
   );
   const { ScssVariableDefinitionProvider } = await import(
     "./scss-variable-provider.js"
+  );
+  const { ScssCompletionProvider } = await import(
+    "./scss-completion-provider.js"
   );
 
   registerScssProviders(context, repositoryContexts);
@@ -215,7 +194,19 @@ export async function activate(context: vscode.ExtensionContext) {
     )
   );
 
-  console.log("SCSS Navigator providers registered");
+  const completionProvider = new ScssCompletionProvider(repositoryContexts);
+  context.subscriptions.push(
+    vscode.languages.registerCompletionItemProvider(
+      ["scss", "sass"],
+      completionProvider,
+      "$",
+      "@",
+      ".",
+      "-",
+      "_",
+      ..."abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split("") // все буквы
+    )
+  );
 }
 
 export function deactivate() {}

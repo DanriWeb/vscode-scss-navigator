@@ -62,18 +62,10 @@ async function getScssCompletions(
 ): Promise<vscode.CompletionItem[]> {
   const completions: vscode.CompletionItem[] = [];
 
-  console.log(
-    `[SCSS Completions] partialPath: "${partialPath}", aliasMap size: ${aliasMap.size}`
-  );
-
   for (const [pattern] of aliasMap) {
     const cleanAlias = pattern.replace(/\/\*?$/, "");
-    console.log(
-      `[SCSS Completions] Checking alias: "${cleanAlias}" against "${partialPath}"`
-    );
 
     if (cleanAlias.startsWith(partialPath)) {
-      console.log(`[SCSS Completions] ✓ Match found: "${cleanAlias}"`);
       const item = new vscode.CompletionItem(
         cleanAlias,
         vscode.CompletionItemKind.Folder
@@ -277,27 +269,16 @@ export function registerScssProviders(
           const regex = /@(?:use|forward|import)\s+["']([^"']*)$/;
           const match = textBeforeCursor.match(regex);
 
-          console.log(
-            `[SCSS Provider] textBeforeCursor: "${textBeforeCursor}"`
-          );
-          console.log(`[SCSS Provider] regex match:`, match);
-
           if (!match) {
-            console.log(`[SCSS Provider] No match, returning`);
             return;
           }
 
           const repoContext = getRepositoryContext(document.uri, contexts);
           if (!repoContext) {
-            console.log(`[SCSS Provider] No repo context, returning`);
             return;
           }
 
           const partialPath = match[1];
-          console.log(
-            `[SCSS Provider] partialPath: "${partialPath}", aliases:`,
-            Array.from(repoContext.aliases.keys())
-          );
 
           const startChar = position.character - partialPath.length;
           const range = new vscode.Range(

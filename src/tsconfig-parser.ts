@@ -176,10 +176,8 @@ export async function findTsConfigInDirectory(
 
   try {
     await vscode.workspace.fs.stat(tsconfigPath);
-    console.log(`tsconfig.json found: ${tsconfigPath.fsPath}`);
     return tsconfigPath;
   } catch (error) {
-    console.log(`tsconfig.json not found in: ${directoryUri.fsPath}`);
     return undefined;
   }
 }
