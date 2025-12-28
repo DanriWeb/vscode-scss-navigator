@@ -47,6 +47,70 @@ function findScssFile(basePath: string): string | null {
   return variants.find(fs.existsSync) || null;
 }
 
+async function getScssCompletions(
+  partialPath: string,
+  currentFileUri: vscode.Uri,
+  aliasMap: PathAliasMap
+): Promise<vscode.CompletionItem[]> {
+  const completions: vscode.CompletionItem[] = [];
+
+  let dirPath = partialPath;
+  const lastSlash = partialPath.lastIndexOf("/");
+  if (lastSlash !== -1) {
+    dirPath = partialPath.substring(0, lastSlash);
+  } else {
+    dirPath = "";
+  }
+
+  const resolvedPath = dirPath
+    ? resolveScssPath(dirPath, currentFileUri, aliasMap)
+    : path.dirname(currentFileUri.fsPath);
+
+  try {
+    const dirUri = vscode.Uri.file(resolvedPath);
+    const entries = await vscode.workspace.fs.readDirectory(dirUri);
+
+    for (const [name, type] of entries) {
+      if (name.startsWith(".")) {
+        continue;
+      }
+
+      if (type === vscode.FileType.Directory) {
+        const item = new vscode.CompletionItem(
+          name + "/",
+          vscode.CompletionItemKind.Folder
+        );
+        item.insertText = name + "/";
+        item.command = {
+          command: "editor.action.triggerSuggest",
+          title: "Trigger Suggest",
+        };
+        completions.push(item);
+      } else if (name.endsWith(".scss") || name.endsWith(".sass")) {
+        let displayName = name;
+        let insertText = name.replace(/\.(scss|sass)$/, "");
+
+        if (name.startsWith("_")) {
+          displayName = name;
+          insertText = name.substring(1).replace(/\.(scss|sass)$/, "");
+        }
+
+        const item = new vscode.CompletionItem(
+          displayName,
+          vscode.CompletionItemKind.File
+        );
+        item.insertText = insertText;
+        item.detail = "SCSS file";
+        completions.push(item);
+      }
+    }
+  } catch (error) {
+    // Directory doesn't exist
+  }
+
+  return completions;
+}
+
 export function registerScssProviders(
   context: vscode.ExtensionContext,
   aliasMap: PathAliasMap
@@ -149,7 +213,33 @@ export function registerScssProviders(
       }
     );
 
-    context.subscriptions.push(definitionProvider, linkProvider, hoverProvider);
+    const completionProvider = vscode.languages.registerCompletionItemProvider(
+      { language },
+      {
+        async provideCompletionItems(document, position) {
+          const line = document.lineAt(position.line).text;
+          const textBeforeCursor = line.substring(0, position.character);
+          const regex = /@(?:use|forward|import)\s+["']([^"']*)$/;
+          const match = textBeforeCursor.match(regex);
+
+          if (!match) {
+            return;
+          }
+
+          const partialPath = match[1];
+          return getScssCompletions(partialPath, document.uri, aliasMap);
+        },
+      },
+      "/",
+      "@"
+    );
+
+    context.subscriptions.push(
+      definitionProvider,
+      linkProvider,
+      hoverProvider,
+      completionProvider
+    );
   });
 }
 
