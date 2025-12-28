@@ -2,7 +2,7 @@
   "name": "vscode-scss-navigator",
   "displayName": "SCSS Navigator",
   "description": "Advanced SCSS/SASS navigation with support for tsconfig paths, aliases, variables, mixins, and monorepos.",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "publisher": "DanriWeb",
   "icon": "icon.png",
   "repository": {
@@ -10,7 +10,7 @@
     "url": "https://github.com/DanriWeb/vscode-scss-navigator.git"
   },
   "engines": {
-    "vscode": "^1.107.0"
+    "vscode": "^1.90.0"
   },
   "categories": [
     "Programming Languages",
@@ -86,7 +86,7 @@
   "devDependencies": {
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
-    "@types/vscode": "^1.107.0",
+    "@types/vscode": "^1.90.0",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2",
     "esbuild": "^0.27.1",

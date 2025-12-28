@@ -19,3 +19,13 @@ All notable changes to the "vscode-scss-navigator" extension will be documented 
 
 - Localized README and package configuration to English.
 - Updated extension configuration structure for better flexibility.
+
+## [1.0.2] - 2025-12-28
+
+### Changed
+
+- Lowered minimum VS Code version requirement to ^1.90.0 for better compatibility.
+
+### Fixed
+
+- Fixed false positive diagnostics for built-in Sass modules (e.g., `sass:math`, `sass:color`).
