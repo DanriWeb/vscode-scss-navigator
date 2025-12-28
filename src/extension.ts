@@ -102,12 +102,13 @@ export async function activate(context: vscode.ExtensionContext) {
     const mergedAliases = mergeAliasMaps(...aliasMaps);
     console.log(`Total aliases after merging: ${mergedAliases.size}`);
 
-    const { registerScssProviders } = await import(
+    const { registerScssProviders, registerScssDiagnostics } = await import(
       "./scss-definition-provider.js"
     );
     registerScssProviders(context, mergedAliases);
+    registerScssDiagnostics(context, mergedAliases);
 
-    console.log("SCSS providers registered");
+    console.log("SCSS providers and diagnostics registered");
   }
 }
 
