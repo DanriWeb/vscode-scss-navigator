@@ -289,6 +289,11 @@ function validateScssImports(
 
     while ((match = regex.exec(line.text)) !== null) {
       const importPath = match[1];
+
+      if (importPath.startsWith("sass:")) {
+        continue;
+      }
+
       const resolvedPath = resolveScssPath(importPath, document.uri, aliasMap);
       const filePath = findScssFile(resolvedPath);
 

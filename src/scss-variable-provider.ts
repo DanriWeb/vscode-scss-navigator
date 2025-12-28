@@ -31,6 +31,10 @@ export function parseScssImports(
       const importPath = match[1];
       let namespace: string | null = match[2] || null;
 
+      if (importPath.startsWith("sass:")) {
+        continue;
+      }
+
       if (!namespace) {
         const parts = importPath.split("/");
         namespace = parts[parts.length - 1].replace(/^_/, "");
