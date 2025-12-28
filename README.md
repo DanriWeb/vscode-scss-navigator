@@ -26,64 +26,10 @@
 
 ## 📑 Contents
 
-- [1. Installation](#1-installation)
-- [2. Usage](#2-usage)
-- [3. Configuration](#3-configuration)
-- [4. License](#4-license)
-- [5. Contacts](#5-contacts)
-
----
-
-## 1. Installation
-
-### From Source
-
-**Prerequisites:** Node.js v18+ and npm v9+.
-
-**Clone:**
-
-```bash
-git clone https://github.com/DanriWeb/vscode-scss-navigator.git
-cd vscode-scss-navigator
-```
-
-**Install Dependencies:**
-
-```bash
-# npm
-npm install
-
-# yarn
-yarn install
-
-# pnpm
-pnpm install
-```
-
-**Build:**
-
-```bash
-# npm
-npm run compile          # compile with type check and lint
-npm run watch            # dev mode with auto-rebuild
-npm run package          # production build
-
-# yarn
-yarn compile
-yarn watch
-yarn package
-
-# pnpm
-pnpm run compile
-pnpm run watch
-pnpm run package
-```
-
-**Run in Development Mode:**
-
-1. Open the project in VS Code
-2. Press `F5` to launch Extension Development Host
-3. In the new window, open a project with SCSS files
+- [1. Usage](#1-usage)
+- [2. Configuration](#2-configuration)
+- [3. License](#3-license)
+- [4. Contacts](#4-contacts)
 
 ---
 
