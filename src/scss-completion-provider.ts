@@ -105,7 +105,7 @@ export async function collectSymbolsFromFile(
 }
 
 /**
- * Collect symbols recursively including @forward files
+ * Collect symbols recursively including @forward and @use files
  */
 async function collectSymbolsRecursively(
   filePath: string,
@@ -120,21 +120,19 @@ async function collectSymbolsRecursively(
 
   const symbols = await collectSymbolsFromFile(filePath, repositoryPath);
 
-  const { parseForwardImports } = await import("./scss-variable-provider.js");
-  const forwardedFiles = await parseForwardImports(
-    filePath,
-    aliasMap,
-    repositoryPath
-  );
+  // Parse all imports from the file
+  const { parseFileImports } = await import("./scss-variable-provider.js");
+  const imports = await parseFileImports(filePath, aliasMap, repositoryPath);
 
-  for (const forwardedFile of forwardedFiles) {
-    const forwardedSymbols = await collectSymbolsRecursively(
-      forwardedFile,
+  // Collect symbols from all imported files
+  for (const importInfo of imports) {
+    const importedSymbols = await collectSymbolsRecursively(
+      importInfo.filePath,
       repositoryPath,
       aliasMap,
       visitedFiles
     );
-    symbols.push(...forwardedSymbols);
+    symbols.push(...importedSymbols);
   }
 
   return symbols;

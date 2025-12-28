@@ -111,6 +111,81 @@ export async function parseForwardImports(
 }
 
 /**
+ * Parses all imports (@use, @forward, @import) from a file
+ * This is similar to parseScssImports but works with file paths instead of documents
+ */
+export async function parseFileImports(
+  filePath: string,
+  aliasMap: PathAliasMap,
+  repositoryPath: string
+): Promise<ScssImport[]> {
+  const cached = scssCache.getImports(repositoryPath, filePath);
+  if (cached) {
+    return cached;
+  }
+
+  const imports: ScssImport[] = [];
+
+  try {
+    const fileUri = vscode.Uri.file(filePath);
+    const content = await vscode.workspace.fs.readFile(fileUri);
+    const text = Buffer.from(content).toString("utf8");
+    const lines = text.split(/\r?\n/);
+
+    const useRegex = /@use\s+["']([^"']+)["'](?:\s+as\s+(\*|\w+))?/g;
+    const forwardRegex = /@forward\s+["']([^"']+)["']/g;
+
+    for (const line of lines) {
+      let match: RegExpExecArray | null;
+
+      // Parse @use directives
+      const useRegexCopy = new RegExp(useRegex);
+      while ((match = useRegexCopy.exec(line)) !== null) {
+        const importPath = match[1];
+        let namespace: string | null = match[2] || null;
+
+        if (importPath.startsWith("sass:")) {
+          continue;
+        }
+
+        if (!namespace) {
+          const parts = importPath.split("/");
+          namespace = parts[parts.length - 1].replace(/^_/, "");
+        }
+
+        if (namespace === "*") {
+          namespace = null;
+        }
+
+        const resolvedPath = resolveScssPath(importPath, fileUri, aliasMap);
+        const resolvedFile = findScssFile(resolvedPath);
+
+        if (resolvedFile) {
+          imports.push({ filePath: resolvedFile, namespace });
+        }
+      }
+
+      // Parse @forward directives
+      const forwardRegexCopy = new RegExp(forwardRegex);
+      while ((match = forwardRegexCopy.exec(line)) !== null) {
+        const importPath = match[1];
+        const resolvedPath = resolveScssPath(importPath, fileUri, aliasMap);
+        const resolvedFile = findScssFile(resolvedPath);
+
+        if (resolvedFile) {
+          imports.push({ filePath: resolvedFile, namespace: null });
+        }
+      }
+    }
+  } catch (error) {
+    // Return empty array on error
+  }
+
+  scssCache.setImports(repositoryPath, filePath, imports);
+  return imports;
+}
+
+/**
  * Finds the definition of a variable, mixin, or function in a file
  */
 export async function findDefinitionInFile(
