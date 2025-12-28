@@ -1,8 +1,8 @@
 {
   "name": "vscode-scss-navigator",
-  "displayName": "vscode-scss-navigator",
-  "description": "SCSS Navigator for Visual Studio Code",
-  "version": "1.0.0",
+  "displayName": "SCSS Navigator",
+  "description": "Advanced SCSS/SASS navigation with support for tsconfig paths, aliases, variables, mixins, and monorepos.",
+  "version": "1.0.1",
   "publisher": "DanriWeb",
   "icon": "icon.png",
   "repository": {
@@ -13,7 +13,19 @@
     "vscode": "^1.107.0"
   },
   "categories": [
+    "Programming Languages",
     "Other"
+  ],
+  "keywords": [
+    "scss",
+    "sass",
+    "css",
+    "navigation",
+    "peek",
+    "definition",
+    "alias",
+    "tsconfig",
+    "monorepo"
   ],
   "activationEvents": [
     "onLanguage:scss",
