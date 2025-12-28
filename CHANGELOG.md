@@ -29,3 +29,9 @@ All notable changes to the "vscode-scss-navigator" extension will be documented 
 ### Fixed
 
 - Fixed false positive diagnostics for built-in Sass modules (e.g., `sass:math`, `sass:color`).
+
+## [1.1.0] - 2025-12-28
+
+### Added
+
+- Added autocompletion for the aliases themselves.
