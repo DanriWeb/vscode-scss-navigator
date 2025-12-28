@@ -2,9 +2,15 @@
   "name": "vscode-scss-navigator",
   "displayName": "vscode-scss-navigator",
   "description": "SCSS Navigator for Visual Studio Code",
-  "version": "0.0.1",
+  "version": "1.0.0",
+  "publisher": "DanriWeb",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DanriWeb/vscode-scss-navigator.git"
+  },
   "engines": {
-    "vscode": "^1.104.0"
+    "vscode": "^1.107.0"
   },
   "categories": [
     "Other"
